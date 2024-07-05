@@ -1,4 +1,4 @@
-module crypto-exchage-swap
+module crypto-exchange-swap
 
 go 1.22.4
 

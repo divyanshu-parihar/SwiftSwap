@@ -1,7 +1,8 @@
 package main
 
 import (
-	"crypto-exchage-swap/pkg"
+	w "crypto-exchange-swap/handler"
+	h "crypto-exchange-swap/helper"
 	"fmt"
 	"log"
 
@@ -16,11 +17,14 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	handler := pkg.NewCoinHandler()
+	// _ := pkg.NewCoinHandler()
 
-	coin := pkg.Coin{
-		Name:  "coin",
-		Token: "BTC",
+	coin := h.Coin{
+		Name:  "Bitcoin",
+		Token: "btc",
 	}
-	handler.BuyWithUSDT(coin, 10.0)
+	// handler.SellforUSDT(coin, 9.979)
+	wazir := w.NewWazirXHandler()
+
+	wazir.BuyWithUSDT(coin, 10)
 }
