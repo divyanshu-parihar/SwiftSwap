@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// entry point for the application
 func main() {
 	fmt.Println("Hello, Starting the bot")
 	err := godotenv.Load()
