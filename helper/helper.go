@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -57,10 +58,56 @@ type Order struct {
 	Created_at         int64           `json:"created_at"`
 	Update_at          int64           `json:"update_at"`
 }
+
+type MexcTicker struct {
+	Symbol             string `json:"symbol"`
+	PriceChange        string `json:"priceChange"`
+	PriceChangePercent string `json:"priceChangePercent"`
+	PrevClosePrice     string `json:"prevClosePrice"`
+	LastPrice          string `json:"lastPrice"`
+	BidPrice           string `json:"bidPrice"`
+	BidQty             string `json:"bidQty"`
+	AskPrice           string `json:"askPrice"`
+	AskQty             string `json:"askQty"`
+	OpenPrice          string `json:"openPrice"`
+	HighPrice          string `json:"highPrice"`
+	LowPrice           string `json:"lowPrice"`
+	Volume             string `json:"volume"`
+	QuoteVolume        string `json:"quoteVolume"`
+	OpenTime           int64  `json:"openTime"`
+	CloseTime          int64  `json:"closeTime"`
+	Count              string `json:"count"`
+}
 type OrderResponse struct {
 	Orders []Order `json:"orders"`
 }
 
+func FindCoinMexc(tickers []MexcTicker, market string) (MexcTicker, error) {
+	for _, ticker := range tickers {
+		if ticker.Symbol == strings.ToUpper(market) {
+			return ticker, nil
+		}
+	}
+	return MexcTicker{}, errors.New("Coin not found")
+}
+
+// no need currently
+
+func GetTickerMexc() ([]MexcTicker, error) {
+	resp, err := http.Get("https://api.mexc.com/api/v3/ticker/24hr")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var tickers []MexcTicker
+
+	if err := json.NewDecoder(resp.Body).Decode(&tickers); err != nil {
+		return nil, err
+	}
+
+	return tickers, nil
+}
 func GetTickerWazir() ([]WazirxTicker, error) {
 	resp, err := http.Get("https://api.wazirx.com/sapi/v1/tickers/24hr")
 	if err != nil {
