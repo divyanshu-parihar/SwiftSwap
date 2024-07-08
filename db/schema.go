@@ -1,5 +1,9 @@
 package db
 
+import (
+	"github.com/google/uuid"
+)
+
 type Transaction struct {
 	ID              int     `bun:"id,pk,autoincrement,type:uuid,"`
 	PrimaryCurrency string  `bun:"primary,notnull,"`
@@ -31,11 +35,19 @@ type Deposits struct {
 	UpdatedAt string  `bun:"updated_at,notnull,default:current_timestamp"`
 }
 
-type UserSavedWallets struct {
-	ID       int    `bun:"id,pk,autoincrement,type:uuid,"`
-	User     string `bun:"user,notnull,"`
-	Currency string `bun:"currency,notnull,"`
-	Chain    string `bun:"chain,notnull,"`
-	Memo     string `bun:"memo,"`
-	Address  string `bun:"address,notnull,"`
+type UserSavedWalletWithPrivateKey struct {
+	ID                uuid.UUID `bun:"type:uuid,default:uuid_generate_v4()" json:"id"`
+	User              int64     `bun:"user,notnull,"`
+	Currency          string    `bun:"currency,notnull,"`
+	Chain             string    `bun:"chain,notnull,"`
+	Memo              string    `bun:"memo,"`
+	Address           string    `bun:"address,notnull,"`
+	UseGeneratedFalse bool      `bun:"use_generated,notnull,default:false"`
+	PrivateKey        string    `bun:"private_key,notnull"`
+}
+
+type UserTrustedWallets struct {
+	ID      uuid.UUID `bun:"type:uuid,default:uuid_generate_v4()" json:"id"`
+	User    int64     `bun:"user,notnull,"`
+	Address string    `bun:"wallets,notnull,"`
 }

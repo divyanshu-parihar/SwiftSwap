@@ -191,3 +191,83 @@ func (h *mexcHandler) BuyWithUSDC(coin helper.Coin, usdtAmount float64) (helper.
 	}
 	return result, nil
 }
+
+type DepostTransaction struct {
+	Amount        string `json:"amount"`
+	Coin          string `json:"coin"`
+	Network       string `json:"network"`
+	Status        int    `json:"status"`
+	Address       string `json:"address"`
+	TxId          string `json:"txId"`
+	InsertTime    int64  `json:"insertTime"`
+	UnlockConfirm string `json:"unlockConfirm"`
+	ConfirmTimes  string `json:"confirmTimes"`
+	Memo          string `json:"memo"`
+}
+
+func (h *mexcHandler) CheckTheDespositTransaction(transactionId string) (bool, error) {
+	params := map[string]string{
+		"coin":      "",
+		"status":    "",
+		"startTime": "",
+		"endTime":   "",
+		"limit":     "1000",
+		// "timestamp" will be added below
+	}
+
+	// Add the mandatory timestamp parameter
+	params["timestamp"] = fmt.Sprintf("%d", time.Now().Unix()*1000) // current time in milliseconds
+	payload := url.Values{}
+	for key, value := range params {
+		if value != "" {
+			payload.Set(key, value)
+		}
+	}
+	signature := generateSignature(payload.Encode(), h.api_secret)
+	payload.Set("signature", signature)
+	fmt.Println("Signature:", signature)
+
+	// Build the full URL with query parameters
+	fullURL := h.base_url + "/api/v3/capital/deposit/hisrec?" + bytes.NewBufferString(payload.Encode()).String()
+	fmt.Println("Full URL:", fullURL)
+	req, err := http.NewRequest("GET", fullURL, nil)
+
+	req.Header.Set("X-MEXC-APIKEY", h.api_key)
+	req.Header.Set("Content-Type", "application/json")
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return false, nil
+	}
+
+	// Assuming you have some httpClient configured
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("Error making request:", err)
+		return false, nil
+	}
+	defer resp.Body.Close()
+
+	// Handle the response...
+	fmt.Println("Response Status:", resp.Status)
+	bodyBytes, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return false, err
+	}
+
+	fmt.Println("RespoNse:", string(bodyBytes))
+	var result []DepostTransaction
+	err = json.Unmarshal(bodyBytes, &result)
+	if err != nil {
+		fmt.Println("Error unmarshalling response:", err)
+		return false, err
+	}
+	for _, transaction := range result {
+		if transaction.TxId == transactionId {
+			return true, nil
+		}
+	}
+	// Reached here means the transaction is not found
+	return false, nil
+}

@@ -3,7 +3,7 @@ package main
 import (
 	b "crypto-exchange-swap/bot"
 	d "crypto-exchange-swap/db"
-	wallets "crypto-exchange-swap/wallets"
+	"crypto-exchange-swap/wallets"
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +14,7 @@ import (
 
 // entry point for the application
 func main() {
+	// wg.CreateWallet()
 	err := godotenv.Load()
 	args := os.Args
 	if err != nil {
@@ -36,12 +37,13 @@ func main() {
 	go b.NewBot(&wg, db, language)
 	wg.Add(1)
 
-	fmt.Println("Hello, Starting the bot")
+	// fmt.Println("Hello, Starting the bot")
 	// coin := h.Coin{
 	// 	Name:  "Bitcoin",
 	// 	Token: "LTC",
 	// }
 	// mexc := w.NewMexcHandler()
+	// mexc.CheckTheDespositTransaction("0xc32e70752a9d18a941116ea86d79015223d757973de8e93a5ea7884814692715")
 	// mexc.BuyWithUSDC(coin, 10)
 	wg.Wait()
 }
