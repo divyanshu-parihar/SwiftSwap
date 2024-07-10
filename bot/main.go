@@ -34,7 +34,7 @@ func NewBot(wg *sync.WaitGroup, db *bun.DB, wallets []*w.DespositWallet) {
 		// Very imporant id( Primary key for most DS)
 		userID := update.Message.Chat.ID
 		if update.Message.IsCommand() {
-			handleCommands(bot, update, update.Message.Command(), userAddWallet, userTrustedWallet)
+			handleCommands(db, bot, update, update.Message.Command(), userAddWallet, userTrustedWallet)
 			continue
 		}
 		if form, ok := userTrustedWallet[userID]; ok {

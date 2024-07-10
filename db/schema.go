@@ -37,7 +37,7 @@ type Deposits struct {
 
 type UserSavedWalletWithPrivateKey struct {
 	ID                uuid.UUID `bun:"type:uuid,default:uuid_generate_v4()" json:"id"`
-	User              int64     `bun:"user,notnull,"`
+	Tid               string    `bun:"tid,notnull,"`
 	Currency          string    `bun:"currency,notnull,"`
 	Chain             string    `bun:"chain,notnull,"`
 	Memo              string    `bun:"memo,"`

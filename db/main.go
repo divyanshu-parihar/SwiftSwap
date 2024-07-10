@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -26,7 +27,7 @@ func AddUserWalletToDB(db *bun.DB, userid int64, network, coin, address, memo st
 	fmt.Println("Adding wallet to db : ", userid, network, coin, address, memo)
 	wallet := &UserSavedWalletWithPrivateKey{
 		ID:                uuid.New(),
-		User:              userid,
+		Tid:               string(strconv.FormatInt(userid, 10)),
 		Currency:          strings.ToUpper(coin),
 		Chain:             strings.ToUpper(network),
 		Address:           strings.ToUpper(address),
@@ -36,6 +37,17 @@ func AddUserWalletToDB(db *bun.DB, userid int64, network, coin, address, memo st
 	}
 	_, err := db.NewInsert().Model(wallet).Exec(context.Background())
 	return err
+}
+
+func GetWallet(db *bun.DB, userid int64) ([]*UserSavedWalletWithPrivateKey, error) {
+	wallets := []*UserSavedWalletWithPrivateKey{}
+	err := db.NewSelect().Model(&wallets).Where("tid = ?", string(strconv.FormatInt(userid, 10))).Scan(context.Background())
+
+	fmt.Println("Wallet : ", wallets)
+	if len(wallets) < 0 && err != nil {
+		return []*UserSavedWalletWithPrivateKey{}, nil
+	}
+	return wallets, nil
 }
 
 func AddUserTrustedWalletToDB(db *bun.DB, userid int64, address string) error {

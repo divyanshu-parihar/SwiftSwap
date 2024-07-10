@@ -3,6 +3,7 @@ package walletGen
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"math/big"
@@ -19,7 +20,45 @@ const (
 	baseChainURL  = "https://mainnet.base.org" // Replace with actual URL if different
 )
 
-func CreateWallet() {
+type NWallet struct {
+	PrivateKey string
+	Chain      string
+	Address    string
+}
+
+// func genBTCWallet(privateKey string) *NWallet {
+// 	// privateKey, err := btcec.NewPrivateKey(btcec.S256())
+// 	// if err != nil {
+// 	// 	log.Fatalf("Failed to generate private key: %v", err)
+// 	// }
+
+// 	// Convert the private key to Wallet Import Format (WIF)
+// 	// wif, err := btcutil.NewWIF(privateKey, &chaincfg.MainNetParams, true)
+// 	// if err != nil {
+// 	// 	log.Fatalf("Failed to convert private key to WIF: %v", err)
+// 	// }
+
+// 	// Get the private key as a hexadecimal string
+// 	// privateKeyHex := hex.EncodeToString(privateKey.Serialize())
+
+// 	// Generate the corresponding public key
+// 	publicKey := privateKey.PubKey()
+
+// 	// Generate the corresponding P2PKH address (Pay-to-PubKey-Hash)
+// 	address, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(publicKey.SerializeCompressed()), &chaincfg.MainNetParams)
+// 	if err != nil {
+// 		log.Fatalf("Failed to generate address: %v", err)
+// 	}
+
+// 	// Output the private key (HEX format), private key (WIF format), and public address
+// 	fmt.Println("Private Key (HEX):", privateKeyHex)
+// 	fmt.Println("Private Key (WIF):", wif.String())
+// 	fmt.Println("Public Address:", address.EncodeAddress())
+// 	// Output the private key (HEX format), private key (WIF format), and public address
+// 	return &NWallet{PrivateKey: privateKeyHex, Chain: "Bitcoin", Address: address.EncodeAddress()}
+// }
+
+func CreateWallet() (*NWallet, *NWallet) {
 	// Load the private key
 	privateKey, err := crypto.GenerateKey()
 	if err != nil {
@@ -38,26 +77,33 @@ func CreateWallet() {
 	}
 	address := crypto.PubkeyToAddress(*publicKeyECDSA)
 	fmt.Printf("Wallet address: %s\n", address.Hex())
+	privateKeyBytes := crypto.FromECDSA(privateKey)
+	// address, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(publicKey.SerializeCompressed()), &chaincfg.MainNetParams)
+	if err != nil {
+		log.Fatalf("Failed to generate address: %v", err)
+	}
+
+	return &NWallet{PrivateKey: hex.EncodeToString(privateKeyBytes), Chain: "Ethereum", Address: address.Hex()}, &NWallet{PrivateKey: hex.EncodeToString(privateKeyBytes), Chain: "Coinbase Base", Address: address.Hex()}
 
 	// Connect to Ethereum mainnet
-	ethClient, err := ethclient.Dial(ethMainnetURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to Ethereum mainnet: %v", err)
-	}
-	fmt.Println("Connected to Ethereum mainnet")
+	// ethClient, err := ethclient.Dial(ethMainnetURL)
+	// if err != nil {
+	// 	log.Fatalf("Failed to connect to Ethereum mainnet: %v", err)
+	// }
+	// fmt.Println("Connected to Ethereum mainnet")
 
 	// Connect to Coinbase Base Chain
-	baseClient, err := ethclient.Dial(baseChainURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to Coinbase Base Chain: %v", err)
-	}
-	fmt.Println("Connected to Coinbase Base Chain")
+	// baseClient, err := ethclient.Dial(baseChainURL)
+	// if err != nil {
+	// 	log.Fatalf("Failed to connect to Coinbase Base Chain: %v", err)
+	// }
+	// fmt.Println("Connected to Coinbase Base Chain")
 
 	// Check balance on Ethereum mainnet
-	checkBalance(ethClient, address, "Ethereum")
+	// checkBalance(ethClient, address, "Ethereum")
 
-	// Check balance on Coinbase Base Chain
-	checkBalance(baseClient, address, "Coinbase Base Chain")
+	// // Check balance on Coinbase Base Chain
+	// checkBalance(baseClient, address, "Coinbase Base Chain")
 
 	// Transfer tokens on Ethereum mainnet
 	// transferTokens(ethClient, privateKey, recipientAddress, transferAmountWei, "Ethereum")
@@ -66,7 +112,7 @@ func CreateWallet() {
 	// transferTokens(baseClient, privateKey, recipientAddress, transferAmountWei, "Coinbase Base Chain")
 }
 
-func checkBalance(client *ethclient.Client, address common.Address, networkName string) {
+func CheckBalance(client *ethclient.Client, address common.Address, networkName string) {
 	balance, err := client.BalanceAt(context.Background(), address, nil)
 	if err != nil {
 		log.Fatalf("Failed to retrieve balance from %s: %v", networkName, err)

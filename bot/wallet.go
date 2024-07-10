@@ -68,7 +68,7 @@ func AddWalletWithContext(db *Bun.DB, form *AddWalletsForm, bot *tgbotapi.BotAPI
 		fmt.Println("form", form)
 		// AddWallet(bot *tg.BotAPI, update tg.Update, userAddWallet map[string]*AddWalletsForm)
 		userForm := userAddWallet[userID]
-		if err := d.AddUserWalletToDB(db, userForm.User, userForm.Network, userForm.Coin, userForm.Address, userForm.Memo, false, ""); err != nil {
+		if err := d.AddUserWalletToDB(db, userForm.User, userForm.Network, userForm.Coin, userForm.Address, userForm.Memo, true, ""); err != nil {
 			fmt.Println("Error saving wallet", err)
 			SendMessage(update, bot, "*Error saving wallet*")
 			return

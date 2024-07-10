@@ -81,6 +81,9 @@ type MexcTicker struct {
 type OrderResponse struct {
 	Orders []Order `json:"orders"`
 }
+type WithdrawResponseMexc struct {
+	id string `json:"id"`
+}
 
 func FindCoinMexc(tickers []MexcTicker, market string) (MexcTicker, error) {
 	for _, ticker := range tickers {

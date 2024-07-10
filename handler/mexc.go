@@ -271,3 +271,54 @@ func (h *mexcHandler) CheckTheDespositTransaction(transactionId string) (bool, e
 	// Reached here means the transaction is not found
 	return false, nil
 }
+
+func (h *mexcHandler) WithDrawCryptoToWallet(coin helper.Coin, network string, amount float64, address string, memo string) (helper.WithdrawResponseMexc, error) {
+	// Withdraw crypto to wallet
+	body := map[string]string{
+		"coin":      coin.Token,
+		"amount":    fmt.Sprintf("%f", amount),
+		"address":   address,
+		"memo":      memo,
+		"netWork":   network,
+		"timestamp": strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10),
+	}
+	payload := url.Values{}
+	for key, value := range body {
+		payload.Set(key, value)
+	}
+	fmt.Println("Payload:", payload.Encode())
+	signature := generateSignature(payload.Encode(), h.api_secret)
+	payload.Set("signature", signature)
+
+	req, err := http.NewRequest("POST", h.base_url+"/api/v3/capital/withdraw", bytes.NewBufferString(payload.Encode()))
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return helper.WithdrawResponseMexc{}, err
+	}
+
+	req.Header.Set("X-MEXC-APIKEY", h.api_key)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error making request:", err)
+		return helper.WithdrawResponseMexc{}, err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return helper.WithdrawResponseMexc{}, err
+	}
+
+	fmt.Println("Response:", string(bodyBytes))
+	var result helper.WithdrawResponseMexc
+	err = json.Unmarshal(bodyBytes, &result)
+	if err != nil {
+		fmt.Println("Error unmarshalling response:", err)
+		return helper.WithdrawResponseMexc{}, err
+	}
+	return result, nil
+}

@@ -29,7 +29,7 @@ func AddUserTrustedWallets(bot *tgbotapi.BotAPI, update tg.Update, userTrustWall
 func AddUserTrustedWalletscontext(db *Bun.DB, form *UserTrustedWalletForm, bot *tgbotapi.BotAPI, update tg.Update, userTrustWallets map[int64]*UserTrustedWalletForm, userid int64) {
 	if form.Address == "" {
 		form.Address = update.Message.Text
-		userTrustWallets[userid] = form
+		// userTrustWallets[userid] = form
 		SendMessage(update, bot, "*You Sure ? (yes/no)*")
 	} else {
 		if update.Message.Text != "yes" && update.Message.Text != "Yes" && update.Message.Text != "YES" && update.Message.Text != "no" && update.Message.Text != "No" && update.Message.Text != "NO" {
@@ -45,7 +45,7 @@ func AddUserTrustedWalletscontext(db *Bun.DB, form *UserTrustedWalletForm, bot *
 		// Save the wallet
 		userTrustWallets[userid] = form
 		d.AddUserTrustedWalletToDB(db, userid, form.Address)
-		fmt.Println("form", form)
+		// fmt.Println("form", form)
 		userTrustWallets[userid] = nil
 
 	}
