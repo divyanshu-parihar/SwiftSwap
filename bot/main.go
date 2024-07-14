@@ -30,12 +30,22 @@ func NewBot(wg *sync.WaitGroup, db *bun.DB, wallets []*w.DespositWallet) {
 
 	userAddWallet := make(map[int64]*AddWalletsForm)
 	userTrustedWallet := make(map[int64]*UserTrustedWalletForm)
+	userTronSendWallet := make(map[int64]*UserTronSendReq)
+	userConvertForm := make(map[int64]*ConvertForm)
 	for update := range updates {
 		// Very imporant id( Primary key for most DS)
 		userID := update.Message.Chat.ID
+
 		if update.Message.IsCommand() {
-			handleCommands(db, bot, update, update.Message.Command(), userAddWallet, userTrustedWallet)
+			handleCommands(db, bot, update, update.Message.Command(), userAddWallet, userTrustedWallet, userTronSendWallet, userConvertForm)
 			continue
+		}
+		if form, ok := userConvertForm[userID]; ok {
+			ConvertWithContext(db, form, userConvertForm, bot, update, userConvertForm)
+		}
+		if form, ok := userTronSendWallet[userID]; ok {
+			SendTronWithContext(db, form, userTronSendWallet, bot, update)
+
 		}
 		if form, ok := userTrustedWallet[userID]; ok {
 			AddUserTrustedWalletscontext(db, form, bot, update, userTrustedWallet, userID)

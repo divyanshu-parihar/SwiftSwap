@@ -2,16 +2,33 @@ package walletGen
 
 import (
 	"context"
+	"crypto/ecdh"
 	"crypto/ecdsa"
+	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
+	"net/http"
 
+	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/tyler-smith/go-bip32"
+	"github.com/tyler-smith/go-bip39"
+	// "github.com/btcsuite/btcd/chaincfg"
+	// "github.com/btcsuite/btcec"
+	// "github.com/btcsuite/btcutil"
+	// "github.com/ethereum/go-ethereum/common"
+	// "github.com/ethereum/go-ethereum/core/types"
+	// "github.com/ethereum/go-ethereum/crypto"
+	// "github.com/ethereum/go-ethereum/ethclient"
+	// "github.com/fbsobreira/gotron-sdk/pkg/common"
+	// "github.com/fbsobreira/gotron-sdk/pkg/crypto"
 )
 
 // Configuration constants for Ethereum and Coinbase Base Chain
@@ -26,91 +43,115 @@ type NWallet struct {
 	Address    string
 }
 
-// func genBTCWallet(privateKey string) *NWallet {
-// 	// privateKey, err := btcec.NewPrivateKey(btcec.S256())
-// 	// if err != nil {
-// 	// 	log.Fatalf("Failed to generate private key: %v", err)
-// 	// }
+type TronWallet struct {
+	PrivateKey string
+	Address    string
+}
 
-// 	// Convert the private key to Wallet Import Format (WIF)
-// 	// wif, err := btcutil.NewWIF(privateKey, &chaincfg.MainNetParams, true)
-// 	// if err != nil {
-// 	// 	log.Fatalf("Failed to convert private key to WIF: %v", err)
-// 	// }
-
-// 	// Get the private key as a hexadecimal string
-// 	// privateKeyHex := hex.EncodeToString(privateKey.Serialize())
-
-// 	// Generate the corresponding public key
-// 	publicKey := privateKey.PubKey()
-
-// 	// Generate the corresponding P2PKH address (Pay-to-PubKey-Hash)
-// 	address, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(publicKey.SerializeCompressed()), &chaincfg.MainNetParams)
+// func CreateTronWallet() (*NWallet, error) {
+// 	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 // 	if err != nil {
-// 		log.Fatalf("Failed to generate address: %v", err)
+// 		return nil, fmt.Errorf("failed to generate private key: %v", err)
 // 	}
 
-// 	// Output the private key (HEX format), private key (WIF format), and public address
-// 	fmt.Println("Private Key (HEX):", privateKeyHex)
-// 	fmt.Println("Private Key (WIF):", wif.String())
-// 	fmt.Println("Public Address:", address.EncodeAddress())
-// 	// Output the private key (HEX format), private key (WIF format), and public address
-// 	return &NWallet{PrivateKey: privateKeyHex, Chain: "Bitcoin", Address: address.EncodeAddress()}
-// }
+// 	privKeyBytes := crypto.FromECDSA(privKey)
+// 	privKeyHex := hex.EncodeToString(privKeyBytes)
 
-func CreateWallet() (*NWallet, *NWallet) {
-	// Load the private key
-	privateKey, err := crypto.GenerateKey()
+// 	pubKey := privKey.PublicKey
+// 	pubKeyBytes := elliptic.Marshal(elliptic.P256(), pubKey.X, pubKey.Y)
+// 	addressHex := address.PubkeyToAddress(pubKeyBytes).Hex()
+
+//		return &TronWallet{
+//			PrivateKey: privKeyHex,
+//			Address:    addressHex,
+//		}, nil
+//	}
+func CreateWallet() (*NWallet, *NWallet, string) {
+	// Generate a random 256-bit seed
+	entropy, err := bip39.NewEntropy(128)
 	if err != nil {
-		log.Fatalf("Failed to generate private key: %v", err)
+		log.Fatalf("Failed to generate entropy: %v", err)
 	}
 
+	// Generate a mnemonic for the entropy
+	mnemonic, err := bip39.NewMnemonic(entropy)
 	if err != nil {
-		log.Fatalf("Failed to load private key: %v", err)
+		log.Fatalf("Failed to generate mnemonic: %v", err)
 	}
 
-	// Get the public address
-	publicKey := privateKey.Public()
+	fmt.Println("Mnemonic:", mnemonic)
+
+	// Generate a seed from the mnemonic
+	seed := bip39.NewSeed(mnemonic, "")
+
+	// Generate a master key from the seed
+	masterKey, err := bip32.NewMasterKey(seed)
+	if err != nil {
+		log.Fatalf("Failed to generate master key: %v", err)
+	}
+
+	// Derive the key for the Ethereum address (using the default path: m/44'/60'/0'/0/0)
+	purpose, _ := masterKey.NewChildKey(bip32.FirstHardenedChild + 44)
+	coinType, _ := purpose.NewChildKey(bip32.FirstHardenedChild + 60)
+	account, _ := coinType.NewChildKey(bip32.FirstHardenedChild + 0)
+	change, _ := account.NewChildKey(0)
+	addressKey, _ := change.NewChildKey(0)
+
+	// Convert the derived key to an ECDSA private key
+	privateKeyECDSA, err := crypto.ToECDSA(addressKey.Key)
+	if err != nil {
+		log.Fatalf("Failed to convert to ECDSA: %v", err)
+	}
+
+	// Generate the public key and Ethereum address
+	publicKey := privateKeyECDSA.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
 		log.Fatalf("Error casting public key to ECDSA")
 	}
-	address := crypto.PubkeyToAddress(*publicKeyECDSA)
-	fmt.Printf("Wallet address: %s\n", address.Hex())
-	privateKeyBytes := crypto.FromECDSA(privateKey)
-	// address, err := btcutil.NewAddressPubKeyHash(btcutil.Hash160(publicKey.SerializeCompressed()), &chaincfg.MainNetParams)
-	if err != nil {
-		log.Fatalf("Failed to generate address: %v", err)
-	}
 
-	return &NWallet{PrivateKey: hex.EncodeToString(privateKeyBytes), Chain: "Ethereum", Address: address.Hex()}, &NWallet{PrivateKey: hex.EncodeToString(privateKeyBytes), Chain: "Coinbase Base", Address: address.Hex()}
+	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
+	privateKeyBytes := crypto.FromECDSA(privateKeyECDSA)
 
-	// Connect to Ethereum mainnet
-	// ethClient, err := ethclient.Dial(ethMainnetURL)
-	// if err != nil {
-	// 	log.Fatalf("Failed to connect to Ethereum mainnet: %v", err)
-	// }
-	// fmt.Println("Connected to Ethereum mainnet")
+	fmt.Printf("Wallet address: %s\n", address)
 
-	// Connect to Coinbase Base Chain
-	// baseClient, err := ethclient.Dial(baseChainURL)
-	// if err != nil {
-	// 	log.Fatalf("Failed to connect to Coinbase Base Chain: %v", err)
-	// }
-	// fmt.Println("Connected to Coinbase Base Chain")
-
-	// Check balance on Ethereum mainnet
-	// checkBalance(ethClient, address, "Ethereum")
-
-	// // Check balance on Coinbase Base Chain
-	// checkBalance(baseClient, address, "Coinbase Base Chain")
-
-	// Transfer tokens on Ethereum mainnet
-	// transferTokens(ethClient, privateKey, recipientAddress, transferAmountWei, "Ethereum")
-
-	// Transfer tokens on Coinbase Base Chain
-	// transferTokens(baseClient, privateKey, recipientAddress, transferAmountWei, "Coinbase Base Chain")
+	return &NWallet{
+			PrivateKey: hex.EncodeToString(privateKeyBytes),
+			Chain:      "Ethereum",
+			Address:    address,
+		}, &NWallet{
+			PrivateKey: hex.EncodeToString(privateKeyBytes),
+			Chain:      "Coinbase Base",
+			Address:    address,
+		},
+		mnemonic
 }
+
+// Connect to Ethereum mainnet
+// ethClient, err := ethclient.Dial(ethMainnetURL)
+// if err != nil {
+// 	log.Fatalf("Failed to connect to Ethereum mainnet: %v", err)
+// }
+// fmt.Println("Connected to Ethereum mainnet")
+
+// Connect to Coinbase Base Chain
+// baseClient, err := ethclient.Dial(baseChainURL)
+// if err != nil {
+// 	log.Fatalf("Failed to connect to Coinbase Base Chain: %v", err)
+// }
+// fmt.Println("Connected to Coinbase Base Chain")
+
+// Check balance on Ethereum mainnet
+// checkBalance(ethClient, address, "Ethereum")
+
+// // Check balance on Coinbase Base Chain
+// checkBalance(baseClient, address, "Coinbase Base Chain")
+
+// Transfer tokens on Ethereum mainnet
+// transferTokens(ethClient, privateKey, recipientAddress, transferAmountWei, "Ethereum")
+
+// Transfer tokens on Coinbase Base Chain
+// transferTokens(baseClient, privateKey, recipientAddress, transferAmountWei, "Coinbase Base Chain")
 
 func CheckBalance(client *ethclient.Client, address common.Address, networkName string) {
 	balance, err := client.BalanceAt(context.Background(), address, nil)
@@ -162,4 +203,77 @@ func transferTokens(client *ethclient.Client, privateKey *ecdsa.PrivateKey, reci
 	}
 
 	fmt.Printf("Transaction sent to %s: %s\n", networkName, signedTx.Hash().Hex())
+}
+
+// btc wallet
+
+func CreateBtcWallet() *NWallet {
+
+	privKey, err := ecdh.P256().GenerateKey(rand.Reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Convert the private key to bytes
+	// privKeyBytes := privKey.D.Bytes()
+
+	// // Create a new WIF (Wallet Import Format) for the private key
+	// wif, err := btcutil.NewWIF((*btcec.PrivateKey)(privKey), &chaincfg.MainNetParams, true)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// Derive the public key from the private key
+	pubKey := privKey.PublicKey()
+	pubKeyBytes := pubKey.Bytes()
+
+	// Generate a public key hash
+	pubKeyHash := btcutil.Hash160(pubKeyBytes)
+
+	// Create a Bitcoin address
+	address, err := btcutil.NewAddressPubKeyHash(pubKeyHash, &chaincfg.MainNetParams)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Private Key (Hex):", hex.EncodeToString(privKey.Bytes()))
+
+	// Print the Bitcoin address
+	fmt.Println("Bitcoin Address:", address.EncodeAddress())
+
+	// Print the public key in hexadecimal format
+	fmt.Println("Public Key (Hex):", hex.EncodeToString(pubKeyBytes))
+
+	return &NWallet{PrivateKey: hex.EncodeToString(pubKeyBytes), Chain: "Bitcoin", Address: address.EncodeAddress()}
+
+}
+
+type BalanceResponse struct {
+	FinalBalance int64 `json:"final_balance"`
+}
+
+func GetBalance(address string) (int64, error) {
+	url := fmt.Sprintf("https://blockchain.info/balance?active=%s", address)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("failed to get balance: %s", resp.Status)
+	}
+	var result map[string]BalanceResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return 0, err
+	}
+
+	balance, exists := result[address]
+
+	if !exists {
+		return 0, fmt.Errorf("address not found in response")
+	}
+
+	return int64(balance.FinalBalance), nil
 }

@@ -5,20 +5,31 @@ import (
 )
 
 type Transaction struct {
-	ID              int     `bun:"id,pk,autoincrement,type:uuid,"`
-	PrimaryCurrency string  `bun:"primary,notnull,"`
-	FinalCurrency   string  `bun:"final,notnull,"`
-	MiddleCurrency  string  `bun:"middle"`
-	User            string  `bun:"user,notnull,"`
-	CreatedAt       string  `bun:"created_at,notnull,default:current_timestamp"`
-	UpdatedAt       string  `bun:"updated_at,notnull,default:current_timestamp"`
-	Filled          bool    `bun:"filled,notnull,default:false"`
-	PartiallyFilled bool    `bun:"partially_filled,notnull,default:false"`
-	InitialQuantity float64 `bun:"initial_quantity,notnull,"`
-	FinalQuantity   float64 `bun:"final_quantity,notnull,"`
-	platformFees    int     `bun:"platform_fees,notnull,default:0"`
-	ExchangeUsed    string  `bun:"exchange_used,notnull,"`
+	ID              uuid.UUID         `bun:"id,pk,autoincrement,type:uuid,"`
+	TxnID           string            `bun:"txn_id,notnull,"`
+	PrimaryCurrency string            `bun:"primary,notnull,"`
+	FinalCurrency   string            `bun:"final,notnull,"`
+	Memo            string            `bun:"memo",default:NONE`
+	MiddleCurrency  string            `bun:"middle"`
+	User            string            `bun:"user,notnull,"`
+	CreatedAt       string            `bun:"created_at,notnull,default:current_timestamp"`
+	UpdatedAt       string            `bun:"updated_at,notnull,default:current_timestamp"`
+	Filled          bool              `bun:"filled,notnull,default:false"`
+	PartiallyFilled bool              `bun:"partially_filled,notnull,default:false"`
+	InitialQuantity float64           `bun:"initial_quantity,notnull,"`
+	FinalQuantity   float64           `bun:"final_quantity,notnull,"`
+	platformFees    int               `bun:"platform_fees,notnull,default:0"`
+	ExchangeUsed    string            `bun:"exchange_used,notnull,"`
+	Tries           int64             `bun:",notnull`
+	Status          TransactionStatus `bun:",notnull`
 }
+type TransactionStatus string
+
+const (
+	StatusCompleted  TransactionStatus = "completed"
+	StatusIncomplete TransactionStatus = "incomplete"
+	StatusFailed     TransactionStatus = "failed"
+)
 
 type Deposits struct {
 	ID            int    `bun:"id,pk,autoincrement,type:uuid,"`

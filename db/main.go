@@ -23,22 +23,40 @@ func StartServer() *bun.DB {
 	return bun.NewDB(sqldb, pgdialect.New())
 }
 
-func AddUserWalletToDB(db *bun.DB, userid int64, network, coin, address, memo string, useGeneratedFalse bool, privateKey string) error {
-	fmt.Println("Adding wallet to db : ", userid, network, coin, address, memo)
-	wallet := &UserSavedWalletWithPrivateKey{
-		ID:                uuid.New(),
-		Tid:               string(strconv.FormatInt(userid, 10)),
-		Currency:          strings.ToUpper(coin),
-		Chain:             strings.ToUpper(network),
-		Address:           strings.ToUpper(address),
-		Memo:              strings.ToUpper(memo),
-		PrivateKey:        strings.ToUpper(privateKey),
-		UseGeneratedFalse: false,
+func CreateTransation(db *bun.DB, txnid string, primary, secondary string, userid string, initialQuantiy int, memo string) error {
+	fmt.Println("Adding Transaction to db : ")
+	transaction := &Transaction{
+		ID:              uuid.New(),
+		TxnID:           txnid,
+		Memo:            memo,
+		PrimaryCurrency: strings.ToUpper(primary),
+		FinalCurrency:   strings.ToLower(secondary),
+		MiddleCurrency:  strings.ToUpper(primary),
+		User:            userid,
+		Filled:          false,
+		PartiallyFilled: false,
+		InitialQuantity: float64(initialQuantiy),
+		FinalQuantity:   0,
+		ExchangeUsed:    "MEXC",
+		platformFees:    0,
+		Tries:           0,
 	}
-	_, err := db.NewInsert().Model(wallet).Exec(context.Background())
+	_, err := db.NewInsert().Model(transaction).Exec(context.Background())
+	// return err
+	// _, err := db.NewCreateTable().Model((*Transaction)(nil)).Exec(context.Background())
 	return err
 }
 
+// func GetTransaction(db *bun.DB) ([]*Transaction, error) {
+// 	transactions := []*Transaction{}
+// 	err := db.NewSelect().Model(&transactions).Where("tid = ?", string(strconv.FormatInt(userid, 10))).Scan(context.Background())
+
+//		fmt.Println("Wallet : ", wallets)
+//		if len(wallets) < 0 && err != nil {
+//			return []*UserSavedWalletWithPrivateKey{}, nil
+//		}
+//		return wallets, nil
+//	}
 func GetWallet(db *bun.DB, userid int64) ([]*UserSavedWalletWithPrivateKey, error) {
 	wallets := []*UserSavedWalletWithPrivateKey{}
 	err := db.NewSelect().Model(&wallets).Where("tid = ?", string(strconv.FormatInt(userid, 10))).Scan(context.Background())
@@ -49,6 +67,32 @@ func GetWallet(db *bun.DB, userid int64) ([]*UserSavedWalletWithPrivateKey, erro
 	}
 	return wallets, nil
 }
+func AddUserWalletToDB(db *bun.DB, userid int64, network, coin, address, memo string, useGeneratedFalse bool, privateKey string) error {
+	fmt.Println("Adding wallet to db : ", userid, network, coin, address, memo)
+	wallet := &UserSavedWalletWithPrivateKey{
+		ID:                uuid.New(),
+		Tid:               string(strconv.FormatInt(userid, 10)),
+		Currency:          strings.ToUpper(coin),
+		Chain:             strings.ToUpper(network),
+		Address:           address,
+		Memo:              memo,
+		PrivateKey:        privateKey,
+		UseGeneratedFalse: false,
+	}
+	_, err := db.NewInsert().Model(wallet).Exec(context.Background())
+	return err
+}
+
+// func GetWallet(db *bun.DB, userid int64) ([]*UserSavedWalletWithPrivateKey, error) {
+// 	wallets := []*UserSavedWalletWithPrivateKey{}
+// 	err := db.NewSelect().Model(&wallets).Where("tid = ?", string(strconv.FormatInt(userid, 10))).Scan(context.Background())
+
+// 	fmt.Println("Wallet : ", wallets)
+// 	if len(wallets) < 0 && err != nil {
+// 		return []*UserSavedWalletWithPrivateKey{}, nil
+// 	}
+// 	return wallets, nil
+// }
 
 func AddUserTrustedWalletToDB(db *bun.DB, userid int64, address string) error {
 

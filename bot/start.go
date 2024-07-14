@@ -28,18 +28,29 @@ func Start(db *Bun.DB, bot *tgbotapi.BotAPI, update tgbotapi.Update) {
 		SendMessage(update, bot, "*You already have a wallet*")
 		return
 	}
-	ethwallet, baseWallet := wg.CreateWallet()
-	if err := d.AddUserWalletToDB(db, update.Message.Chat.ID, ethwallet.Chain, "ETH", ethwallet.Address, "", true, ethwallet.PrivateKey); err != nil {
+
+	ethWallet, _, _ := wg.CreateWallet()
+	if err := d.AddUserWalletToDB(db, update.Message.From.ID, ethWallet.Chain, "ETH", ethWallet.Address, "NONE", true, ethWallet.PrivateKey); err != nil {
 		fmt.Println("Error saving wallet", err)
+
+		SendMessage(update, bot, "*Error saving eth wallet*")
+		return
+	}
+
+	tronWallet := wg.GenerateTronwallet()
+	if err := d.AddUserWalletToDB(db, update.Message.From.ID, "TRC20", "TRON", tronWallet.AddressBase58, "NONE", true, tronWallet.PrivateKey); err != nil {
+		fmt.Println("Error saving wallet", err)
+
 		SendMessage(update, bot, "*Error saving eth wallet*")
 		return
 	}
 
 	msg.Text += "\n\n*You have been assigned a wallet*"
 	msg.Text += "\n═ Your Wallets ═"
-	msg.Text += "\nw1: [ETH](https://etherscan.io/address/" + ethwallet.Address + "): ⟠ | [BASE](https://basescan.org/address/" + baseWallet.Address + "): ⟠ "
-	msg.Text += "\n\n*ETH Address | BASE Address* 	```" + ethwallet.Address + "```"
-
+	msg.Text += "\nw1: [ETH](https://ethscan.io/address/" + ethWallet.Address + "): ⟠ "
+	msg.Text += "\n\n*ETH Address* 	```" + ethWallet.Address + "```  \n*ETH Private Key(Don't share this, We don't store it.)* 	```" + ethWallet.PrivateKey + "```"
+	msg.Text += "\nw1: [TRON](https://tronscan.org/#/address/" + tronWallet.AddressBase58 + "): ⟠ "
+	msg.Text += "\n\n*TRON Address* 	```" + tronWallet.AddressBase58 + "```  \n*TRON Private Key(Don't share this, We don't store it.)* 	```" + tronWallet.PrivateKey + "```"
 	msg.ParseMode = "Markdown"
 	bot.Send(msg)
 }
