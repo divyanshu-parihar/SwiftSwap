@@ -9,7 +9,8 @@ type Transaction struct {
 	TxnID           string            `bun:"txn_id,notnull,"`
 	PrimaryCurrency string            `bun:"primary,notnull,"`
 	FinalCurrency   string            `bun:"final,notnull,"`
-	Memo            string            `bun:"memo",default:NONE`
+	Memo            string            `bun:"memo",notnull`
+	Network         string            `bun:"network",notnull`
 	MiddleCurrency  string            `bun:"middle"`
 	User            string            `bun:"user,notnull,"`
 	CreatedAt       string            `bun:"created_at,notnull,default:current_timestamp"`
@@ -22,29 +23,34 @@ type Transaction struct {
 	ExchangeUsed    string            `bun:"exchange_used,notnull,"`
 	Tries           int64             `bun:",notnull`
 	Status          TransactionStatus `bun:",notnull`
+	Address         string            `bun:"address,notnull,"`
 }
 type TransactionStatus string
 
 const (
+	StatusPending    TransactionStatus = "pending"
 	StatusCompleted  TransactionStatus = "completed"
 	StatusIncomplete TransactionStatus = "incomplete"
 	StatusFailed     TransactionStatus = "failed"
+	StatusDeposit    TransactionStatus = "deposit"
+	StatusWithdrawal TransactionStatus = "pw"
+	StatusTransfer   TransactionStatus = "wd"
 )
 
-type Deposits struct {
-	ID            int    `bun:"id,pk,autoincrement,type:uuid,"`
-	User          string `bun:"user,notnull,"`
-	Currency      string `bun:"currency,notnull,"`
-	Chain         string `bun:"chain,notnull,"`
-	TransactionID int    `bun:"transaction_id,notnull,"`
+// type Deposits struct {
+// 	ID            int    `bun:"id,pk,autoincrement,type:uuid,"`
+// 	User          string `bun:"user,notnull,"`
+// 	Currency      string `bun:"currency,notnull,"`
+// 	Chain         string `bun:"chain,notnull,"`
+// 	TransactionID int    `bun:"transaction_id,notnull,"`
 
-	confirmed bool    `bun:"confirms,notnull,default:false"`
-	Amount    float64 `bun:"amount,notnull,"`
-	Exchange  string  `bun:"exchange,notnull,"`
-	Addr      string  `bun:"addr,notnull,"`
-	CreatedAt string  `bun:"created_at,notnull,default:current_timestamp"`
-	UpdatedAt string  `bun:"updated_at,notnull,default:current_timestamp"`
-}
+// 	confirmed bool    `bun:"confirms,notnull,default:false"`
+// 	Amount    float64 `bun:"amount,notnull,"`
+// 	Exchange  string  `bun:"exchange,notnull,"`
+// 	Addr      string  `bun:"addr,notnull,"`
+// 	CreatedAt string  `bun:"created_at,notnull,default:current_timestamp"`
+// 	UpdatedAt string  `bun:"updated_at,notnull,default:current_timestamp"`
+// }
 
 type UserSavedWalletWithPrivateKey struct {
 	ID                uuid.UUID `bun:"type:uuid,default:uuid_generate_v4()" json:"id"`

@@ -23,7 +23,7 @@ func StartServer() *bun.DB {
 	return bun.NewDB(sqldb, pgdialect.New())
 }
 
-func CreateTransation(db *bun.DB, txnid string, primary, secondary string, userid string, initialQuantiy int, memo string) error {
+func CreateTransation(db *bun.DB, txnid string, primary, secondary string, userid string, initialQuantiy int, memo string, network, address string) error {
 	fmt.Println("Adding Transaction to db : ")
 	transaction := &Transaction{
 		ID:              uuid.New(),
@@ -31,6 +31,7 @@ func CreateTransation(db *bun.DB, txnid string, primary, secondary string, useri
 		Memo:            memo,
 		PrimaryCurrency: strings.ToUpper(primary),
 		FinalCurrency:   strings.ToLower(secondary),
+		Network:         network,
 		MiddleCurrency:  strings.ToUpper(primary),
 		User:            userid,
 		Filled:          false,
@@ -40,23 +41,44 @@ func CreateTransation(db *bun.DB, txnid string, primary, secondary string, useri
 		ExchangeUsed:    "MEXC",
 		platformFees:    0,
 		Tries:           0,
+		Status:          StatusPending,
+		Address:         address,
 	}
 	_, err := db.NewInsert().Model(transaction).Exec(context.Background())
 	// return err
 	// _, err := db.NewCreateTable().Model((*Transaction)(nil)).Exec(context.Background())
 	return err
 }
+func UpdateTransactionStatus(db *bun.DB, transactionID string, newStatus string) (sql.Result, error) {
+	result, err := db.NewUpdate().
+		Model(&Transaction{}).
+		Set("status = ?", newStatus).
+		Where("txn_id = ?", transactionID).
+		Exec(context.Background())
 
-// func GetTransaction(db *bun.DB) ([]*Transaction, error) {
-// 	transactions := []*Transaction{}
-// 	err := db.NewSelect().Model(&transactions).Where("tid = ?", string(strconv.FormatInt(userid, 10))).Scan(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+func GetTransactionWithTxnID(db *bun.DB, txnid string) ([]*Transaction, error) {
+	transactions := []*Transaction{}
+	err := db.NewSelect().Model(&transactions).Where("txn_id = ?", txnid).Scan(context.Background())
 
-//		fmt.Println("Wallet : ", wallets)
-//		if len(wallets) < 0 && err != nil {
-//			return []*UserSavedWalletWithPrivateKey{}, nil
-//		}
-//		return wallets, nil
-//	}
+	if err != nil {
+		return []*Transaction{}, err
+	}
+	return transactions, nil
+}
+func GetPendingTransaction(db *bun.DB) ([]*Transaction, error) {
+	transactions := []*Transaction{}
+	err := db.NewSelect().Model(&transactions).Where("status = ?", StatusPending).Scan(context.Background())
+
+	if err != nil {
+		return []*Transaction{}, err
+	}
+	return transactions, nil
+}
 func GetWallet(db *bun.DB, userid int64) ([]*UserSavedWalletWithPrivateKey, error) {
 	wallets := []*UserSavedWalletWithPrivateKey{}
 	err := db.NewSelect().Model(&wallets).Where("tid = ?", string(strconv.FormatInt(userid, 10))).Scan(context.Background())

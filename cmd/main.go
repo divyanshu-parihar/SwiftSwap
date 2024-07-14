@@ -4,6 +4,7 @@ import (
 	b "crypto-exchange-swap/bot"
 	d "crypto-exchange-swap/db"
 	ex "crypto-exchange-swap/handler"
+	t "crypto-exchange-swap/trader"
 	"crypto-exchange-swap/wallets"
 	"sync"
 
@@ -39,6 +40,8 @@ func main() {
 	var wg sync.WaitGroup
 	language := wallets.NewDepositWallets()
 	go b.NewBot(&wg, db, language)
+	wg.Add(1)
+	go t.Trader(db)
 	wg.Add(1)
 	// value,err ""= ("bc1qzfr92rqd4rezwcvfwhf3rw8tuq8y4ve3u34n67")
 	// value, err := cw.GetBalance("bc1p8pr29y9ypz9gzs4tgp45yauxtfzdc4yse94e204up20yh77s2lysdrnqw3")

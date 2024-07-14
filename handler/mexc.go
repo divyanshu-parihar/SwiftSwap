@@ -64,7 +64,7 @@ func (h *mexcHandler) SellForUSDC(coin helper.Coin, amount float64) (helper.Orde
 	fmt.Println("Quantity to sell:", quantity)
 
 	body := map[string]string{
-		"symbol":     strings.ToUpper(coin.Token) + "USDC",
+		"symbol":     strings.ToUpper(coin.Token) + "USDT",
 		"side":       "SELL",
 		"type":       "LIMIT",
 		"quantity":   fmt.Sprintf("%f", quantity),
@@ -124,7 +124,7 @@ func (h *mexcHandler) BuyWithUSDC(coin helper.Coin, usdtAmount float64) (helper.
 		fmt.Println("Error fetching ticker data:", err)
 		return helper.OrderResponse{}, err
 	}
-	ticker, err := helper.FindCoinMexc(tickers, coin.Token+"USDC")
+	ticker, err := helper.FindCoinMexc(tickers, coin.Token+"USDT")
 
 	if err != nil {
 		fmt.Println("Error finding coin:", err)
@@ -141,7 +141,7 @@ func (h *mexcHandler) BuyWithUSDC(coin helper.Coin, usdtAmount float64) (helper.
 	fmt.Println("Quantity to buy:", quantity)
 	fmt.Println("Price:", price)
 	body := map[string]string{
-		"symbol":        strings.ToUpper(coin.Token) + "USDC",
+		"symbol":        strings.ToUpper(coin.Token) + "USDT",
 		"side":          "BUY",
 		"type":          "LIMIT",
 		"price":         fmt.Sprintf("%f", price),

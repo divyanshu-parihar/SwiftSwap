@@ -86,7 +86,7 @@ func ConvertWithContext(db *Bun.DB, form *ConvertForm, userTronSendWallet map[in
 			}
 
 			// d.CreateTransation(db, , primary string, secondary string, userid string, initialQuantiy int)
-			d.CreateTransation(db, response.TxId, "TRX", form.Coin, string(strconv.FormatInt(update.Message.Chat.ID, 10)), int(num), form.Memo)
+			d.CreateTransation(db, response.TxId, "TRX", form.Coin, string(strconv.FormatInt(update.Message.Chat.ID, 10)), int(num), form.Memo, "TRON(TRC20)", form.Address)
 		}
 		userConvertForm[update.Message.Chat.ID] = nil
 

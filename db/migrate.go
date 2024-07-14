@@ -16,10 +16,10 @@ func RunMigrations(db *bun.DB) error {
 	if err != nil {
 		return fmt.Errorf("error creating table: %w", err)
 	}
-	_, err = db.NewCreateTable().Model((*Deposits)(nil)).IfNotExists().Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("error creating table: %w", err)
-	}
+	// _, err = db.NewCreateTable().Model((*Deposits)(nil)).IfNotExists().Exec(ctx)
+	// if err != nil {
+	// 	return fmt.Errorf("error creating table: %w", err)
+	// }
 	_, err = db.NewCreateTable().Model((*UserSavedWalletWithPrivateKey)(nil)).IfNotExists().Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("error creating table: %w", err)
