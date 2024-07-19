@@ -15,5 +15,5 @@ func GetUserWallets(bot *tgbotapi.BotAPI, update tgbotapi.Update, db *Bun.DB) {
 	if err != nil {
 		SendMessage(update, bot, "*Error checking wallet*")
 	}
-	SendMessage(update, bot, "*YOUR WALLETS*\n You can check your balance with /balance command\n"+"*ETH*: ```"+wallets[0].Address+"```"+"*TRON*: ```"+wallets[1].Address+"```")
+	SendMessage(update, bot, "*YOUR WALLETS*\n You can check your balance with /balance command\n"+"*ETH|BASE*: ```"+wallets[0].Address+"```"+"*TRON*: ```"+wallets[1].Address+"```")
 }

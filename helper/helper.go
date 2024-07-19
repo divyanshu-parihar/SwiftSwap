@@ -97,7 +97,7 @@ func FindCoinMexc(tickers []MexcTicker, market string) (MexcTicker, error) {
 // no need currently
 
 func GetTickerMexc() ([]MexcTicker, error) {
-	resp, err := http.Get("https://api.mexc.com/api/v3/ticker/24hr")
+	resp, err := http.Get("https://api.mexc.in/api/v3/ticker/24hr")
 	if err != nil {
 		return nil, err
 	}

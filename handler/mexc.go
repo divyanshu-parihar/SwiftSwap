@@ -4,6 +4,7 @@ import (
 	"bytes"
 	helper "crypto-exchange-swap/helper"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -47,27 +48,33 @@ func (h *mexcHandler) SellForUSDC(coin helper.Coin, amount float64) (helper.Orde
 		return helper.OrderResponse{}, err
 	}
 
-	ticker, err := helper.FindCoinMexc(tickers, coin.Token+"usdt")
+	ticker, err := helper.FindCoinMexc(tickers, coin.Token+"USDT")
 	if err != nil {
 		fmt.Println("Error finding coin:", err)
 		return helper.OrderResponse{}, err
 	}
-
 	price, err := strconv.ParseFloat(ticker.LastPrice, 64)
 	fmt.Println("Price:", price)
 	if err != nil {
 		fmt.Println("Error parsing price:", err)
 		return helper.OrderResponse{}, err
 	}
-
 	quantity := float64(int((amount/price)*100000)) / 100000
 	fmt.Println("Quantity to sell:", quantity)
+	// minimum order is 5USD
+	println(int(quantity * price))
+	if int(quantity*price) < 5 {
 
+		fmt.Println("Minimum order is 5USD")
+		return helper.OrderResponse{}, errors.New("Minimum order is 5USD")
+	}
+
+	println("SELLING FOR USDC")
 	body := map[string]string{
 		"symbol":     strings.ToUpper(coin.Token) + "USDT",
 		"side":       "SELL",
-		"type":       "LIMIT",
-		"quantity":   fmt.Sprintf("%f", quantity),
+		"type":       "MARKET",
+		"quantity":   fmt.Sprintf("%f", amount),
 		"price":      ticker.LastPrice,
 		"recvWindow": "10000",
 		"timestamp":  strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10),
@@ -89,10 +96,6 @@ func (h *mexcHandler) SellForUSDC(coin helper.Coin, amount float64) (helper.Orde
 
 	req.Header.Set("X-MEXC-APIKEY", h.api_key)
 	req.Header.Set("Content-Type", "application/json")
-	if err != nil {
-		fmt.Println("Error creating request:", err)
-		return helper.OrderResponse{}, err
-	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

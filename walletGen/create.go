@@ -114,6 +114,55 @@ func CreateWallet() (*NWallet, *NWallet, string) {
 	privateKeyBytes := crypto.FromECDSA(privateKeyECDSA)
 
 	fmt.Printf("Wallet address: %s\n", address)
+	ethClient, err := ethclient.Dial(ethMainnetURL)
+
+	if err != nil {
+		log.Fatalf("Failed to connect to Ethereum mainnet: %v", err)
+	}
+	fmt.Println("Connected to Ethereum mainnet")
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	fmt.Printf("Using address: %s\n", fromAddress.Hex())
+
+	// Get the nonce (number of transactions sent from this address)
+	nonce, err := ethClient.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Fatalf("Failed to get the nonce: %v", err)
+	}
+
+	// Get the suggested gas price
+	gasPrice, err := ethClient.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to suggest gas price: %v", err)
+	}
+
+	// Define the recipient address and transaction details
+	toAddress := common.HexToAddress("RECIPIENT_ADDRESS")
+	value := big.NewInt(0)    // 0 ETH
+	gasLimit := uint64(21000) // in units
+
+	// Create a new transaction
+	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
+
+	// Get the network ID for signing the transaction
+	chainID, err := ethClient.NetworkID(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to get network ID: %v", err)
+	}
+
+	// Sign the transaction
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKeyECDSA)
+	if err != nil {
+		log.Fatalf("Failed to sign transaction: %v", err)
+	}
+
+	// Send the transaction
+	err = ethClient.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		log.Fatalf("Failed to send transaction: %v", err)
+	}
+
+	fmt.Printf("Transaction sent: %s\n", signedTx.Hash().Hex())
+	// Connect to Coinbase Base Chain
 
 	return &NWallet{
 			PrivateKey: hex.EncodeToString(privateKeyBytes),
@@ -128,24 +177,6 @@ func CreateWallet() (*NWallet, *NWallet, string) {
 }
 
 // Connect to Ethereum mainnet
-// ethClient, err := ethclient.Dial(ethMainnetURL)
-// if err != nil {
-// 	log.Fatalf("Failed to connect to Ethereum mainnet: %v", err)
-// }
-// fmt.Println("Connected to Ethereum mainnet")
-
-// Connect to Coinbase Base Chain
-// baseClient, err := ethclient.Dial(baseChainURL)
-// if err != nil {
-// 	log.Fatalf("Failed to connect to Coinbase Base Chain: %v", err)
-// }
-// fmt.Println("Connected to Coinbase Base Chain")
-
-// Check balance on Ethereum mainnet
-// checkBalance(ethClient, address, "Ethereum")
-
-// // Check balance on Coinbase Base Chain
-// checkBalance(baseClient, address, "Coinbase Base Chain")
 
 // Transfer tokens on Ethereum mainnet
 // transferTokens(ethClient, privateKey, recipientAddress, transferAmountWei, "Ethereum")

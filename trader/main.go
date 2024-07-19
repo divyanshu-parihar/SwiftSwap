@@ -6,7 +6,6 @@ import (
 	helper "crypto-exchange-swap/helper"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -98,15 +97,16 @@ func Trader(db *Bun.DB) {
 					Name:  deposit.Coin,
 					Token: strings.ToUpper(deposit.Coin),
 				}
-				num, err := strconv.ParseFloat(deposit.Amount, 64)
-				if err != nil {
-					fmt.Println("Error converting amount to int")
-					return
-				}
-				response, err := mexcHandler.SellForUSDC(coin, num)
+				// num, err := strconv.ParseFloat(deposit.Amount, 64)
+				// if err != nil {
+				// 	fmt.Println("Error converting amount to int")
+				// 	return
+				// }
+				response, err := mexcHandler.SellForUSDC(coin, 40)
 				if err != nil {
 					fmt.Println("Error selling for USDC")
-					/// TODO: update the transaction status to failed
+					/// TODO: update the transaction status to faile
+					return
 				}
 				d.UpdateTransactionStatus(db, deposit.TxId, string(d.StatusIncomplete))
 				soldDesposit <- SoldResponse{response, deposit.TxId}
@@ -129,13 +129,15 @@ func Trader(db *Bun.DB) {
 				}
 				transactions, err := d.GetPendingTransaction(db)
 				if err != nil {
-					fmt.Printf("Couldn't get transactions : %s", time.Now().UTC())
+
+					fmt.Printf("Couldn't get transactions : %s %s", time.Now().UTC(), err)
 				}
 				fmt.Println(transactions)
 				// TODO: try making this GODDAAM thing faster;
 				for _, transaction := range transactions {
 					for _, deposit := range deposits {
-						if transaction.TxnID == deposit.TxId {
+
+						if deposit.Status == 5 && transaction.TxnID == deposit.TxId {
 							d.UpdateTransactionStatus(db, transaction.TxnID, string(d.StatusDeposit))
 							newDesposit <- deposit
 						}
@@ -144,8 +146,4 @@ func Trader(db *Bun.DB) {
 			}()
 		}
 	}
-}
-
-func handleSellingForUSDT() {
-
 }

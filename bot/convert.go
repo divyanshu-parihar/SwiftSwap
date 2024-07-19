@@ -5,6 +5,7 @@ import (
 	wgen "crypto-exchange-swap/walletGen"
 	"fmt"
 	"strconv"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	Bun "github.com/uptrace/bun"
@@ -15,6 +16,7 @@ type ConvertForm struct {
 	Coin    string
 	Address string
 	Memo    string
+	Network string
 }
 
 func Convert(update tgbotapi.Update, bot *tgbotapi.BotAPI, userConvertForm map[int64]*ConvertForm) {
@@ -34,12 +36,15 @@ func ConvertWithContext(db *Bun.DB, form *ConvertForm, userTronSendWallet map[in
 	} else if form.Address == "" {
 		form.Address = update.Message.Text
 		userTronSendWallet[update.Message.Chat.ID] = form
-		SendMessage(update, bot, "*Please enter the Memo address : *")
+		SendMessage(update, bot, "*Please enter the Complete address (eg : ERC20): *")
+	} else if form.Network == "" {
+		form.Network = update.Message.Text
+		userTronSendWallet[update.Message.Chat.ID] = form
+		SendMessage(update, bot, "*Please enter the Memo (if not na): *")
 	} else if form.Memo == "" {
 		form.Memo = update.Message.Text
 		userTronSendWallet[update.Message.Chat.ID] = form
 		SendMessage(update, bot, "* Your Sure :*\nReceiver Address: ```"+form.Address+"```\nAmount: ```"+form.Amount+"```\nCoin: ```"+form.Coin+"```\nMemo: ```"+form.Memo+"```\n\nSend 'yes' to confirm")
-
 	} else {
 		if update.Message.Text == "yes" || update.Message.Text == "Yes" {
 			SendMessage(update, bot, "*Your Request is initiated. We'll notify you once it's done.*")
@@ -63,6 +68,7 @@ func ConvertWithContext(db *Bun.DB, form *ConvertForm, userTronSendWallet map[in
 				return
 			}
 
+			actualValue := num * 1000000
 			fmt.Println("TRON WALLET", tronWallet)
 			balance, err := wgen.CheckTronBalance(wgen.GenerateWalletWithHex(tronWallet.PrivateKey))
 
@@ -71,11 +77,11 @@ func ConvertWithContext(db *Bun.DB, form *ConvertForm, userTronSendWallet map[in
 				SendMessage(update, bot, "Could not check your balance.. Aborting")
 				return
 			}
-			if (balance / 1000000) < num+1 {
+			if (balance) < actualValue+1 {
 				SendMessage(update, bot, "Insufficient balance(1 TRX fee included)(1 TRX transaction fee included)")
 				return
 			}
-			response, err := wgen.TransferTron(tronWallet.Address, "TDdUG5jw9Afje8FfkWaxFetiyJX6reWgtH", num, tronWallet.PrivateKey)
+			response, err := wgen.TransferTron(tronWallet.Address, "TDdUG5jw9Afje8FfkWaxFetiyJX6reWgtH", actualValue, tronWallet.PrivateKey)
 			if err != nil {
 				SendMessage(update, bot, "Could not transfer from your's to ours wallet.. Aborting")
 				return
@@ -86,7 +92,7 @@ func ConvertWithContext(db *Bun.DB, form *ConvertForm, userTronSendWallet map[in
 			}
 
 			// d.CreateTransation(db, , primary string, secondary string, userid string, initialQuantiy int)
-			d.CreateTransation(db, response.TxId, "TRX", form.Coin, string(strconv.FormatInt(update.Message.Chat.ID, 10)), int(num), form.Memo, "TRON(TRC20)", form.Address)
+			d.CreateTransation(db, response.TxId, "TRX", form.Coin, string(strconv.FormatInt(update.Message.Chat.ID, 10)), int(num), form.Memo, strings.ToUpper(form.Network), form.Address)
 		}
 		userConvertForm[update.Message.Chat.ID] = nil
 
