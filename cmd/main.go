@@ -6,8 +6,6 @@ import (
 	ex "crypto-exchange-swap/handler"
 	"crypto-exchange-swap/wallets"
 	"sync"
-
-	// "crypto-exchange-swap/wallets"
 	"fmt"
 	"log"
 	"os"
